@@ -1,11 +1,12 @@
 const express = require('express');
 const usersRoute = express.Router();
 const jsonParser = express.json();
-const UsersService = require('./users-service')
+const UsersService = require('./users-service');
+const path = require('path');
 
 usersRoute
   .route('/')
-  .post(jsonParser, (req, res) => {
+  .post(jsonParser, (req, res, next) => {
     const requiredFields = ['full_name', 'user_name', 'password'];
     for (const field of requiredFields){
       if (!req.body[field]){
@@ -14,7 +15,7 @@ usersRoute
         })
       }
     }
-    const {password, user_name} = req.body
+    const { password, user_name, full_name, nickname } = req.body
     passwordError = UsersService.validatePassword(password)
     if (passwordError)
       return res.status(400).json({error: passwordError});
@@ -24,9 +25,21 @@ usersRoute
       .then(taken => {
         if (taken)
           return res.status(400).json({error: 'Username already exists'})
-      })
-
-    res.status(200).end();
+        const newUser = {
+          user_name,
+          password,
+          full_name,
+          nickname,
+          date_created: 'now()',
+        }
+        return UsersService.insertUser(req.app.get('db'), newUser)
+          .then(user => {
+            res
+              .status(201)
+              .location(path.posix.join(req.originalUrl, `/${user.id}`))
+              .json(UsersService.serializeUser(user))
+          })
+      }).catch(next)
   })
 
   module.exports = usersRoute;
