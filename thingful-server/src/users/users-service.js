@@ -1,5 +1,6 @@
 const xss = require('xss')
 const REGEX_UPPER_LOWER_NUMBER_SPECIAL = /(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&])[\S]+/
+const bcyrpt = require('bcryptjs')
 
 const UsersSercive = {
   validatePassword(password){
@@ -12,6 +13,10 @@ const UsersSercive = {
     if (!REGEX_UPPER_LOWER_NUMBER_SPECIAL.test(password))
       return 'Password must contain 1 upper case, 1 lower case, a number and a special character'
     return null
+  },
+
+  hashPassword(password){
+    return bcyrpt.hash(password, 12)
   },
 
   hasUserWithUserName(user_name, db){
